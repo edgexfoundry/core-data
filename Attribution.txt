@@ -1,0 +1,34 @@
+The following open source projects are referenced by Core Data:
+
+Spring Boot (Apache 2.0) - https://projects.spring.io/spring-boot/
+https://github.com/spring-projects/spring-boot/blob/master/LICENSE.txt
+
+Spring Data JPA (Apache 2.0) - http://projects.spring.io/spring-data-jpa/
+http://docs.spring.io/spring-data/jpa/snapshot-site/license.html
+
+Spring Framework (Apache 2.0) - http://projects.spring.io/spring-framework/
+https://github.com/spring-projects/spring-framework
+
+Spring Cloud (Apache 2.0) - http://projects.spring.io/spring-cloud/
+https://github.com/spring-cloud/spring-cloud-release/blob/master/LICENSE.txt
+
+Log4J (Apache 2.0) - https://logging.apache.org/log4j/2.x/
+https://logging.apache.org/log4j/2.0/license.html
+
+Apache MQ (Apache 2.0) - http://activemq.apache.org/
+http://activemq.apache.org/
+
+Paho (EPL) - http://www.eclipse.org/paho/
+http://www.eclipse.org/legal/termsofuse.php
+
+GSON (Apache 2.0) - https://github.com/google/gson
+https://github.com/google/gson/blob/master/LICENSE
+
+Geronimo XBean (Apache 2.0) - http://geronimo.apache.org/xbean/
+http://geronimo.apache.org/xbean/what-is-the-license.html
+
+JeroMQ (Mozilla Public License 2.0) - https://github.com/zeromq/jeromq
+https://github.com/zeromq/jeromq/blob/master/LICENSE
+
+Junit (EPL 1.0) - http://junit.org/junit4/
+http://junit.org/junit4/license.html
