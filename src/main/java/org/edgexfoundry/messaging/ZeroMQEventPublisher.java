@@ -49,8 +49,9 @@ public class ZeroMQEventPublisher implements EventPublisher {
 		context = ZMQ.context(1);
 	}
 
-	@Override
-	public void sendEventMessage(Event event) {
+	// synchronized because zeroMQ sockets are not thread-safe
+    @Override
+	public synchronized void sendEventMessage(Event event) {
 		try {
 			if (publisher == null)
 				getPublisher();
@@ -74,9 +75,7 @@ public class ZeroMQEventPublisher implements EventPublisher {
 		this.zeromqAddressPort = zeromqAddressPort;
 	}
 
-	// synchronized so that multiple early requests for sending message don't
-	// cause overwrite of port
-	private synchronized void getPublisher() {
+	private void getPublisher() {
 		//logger.error("--->Getting Publisher");
 		try {
 			if (publisher == null) {
