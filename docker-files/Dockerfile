@@ -16,7 +16,13 @@
 ###############################################################################
 # Docker image for Core Data micro service 
 # FROM java:8
-FROM alpine:3.4
+FROM maven:3.3-jdk-8-alpine
+
+COPY docker-files/pom.xml .
+
+RUN mvn dependency:copy -q
+
+FROM alpine:3.6
 MAINTAINER Jim White <james_white2@dell.com>
 
 RUN apk --update add openjdk8-jre
@@ -27,8 +33,8 @@ ENV APP=core-data.jar
 ENV APP_PORT=48080
 
 #copy JAR and property files to the image
-COPY *.jar $APP_DIR/$APP
-COPY *.properties $APP_DIR/
+COPY --from=0 *.jar $APP_DIR/$APP
+COPY docker-files/*.properties $APP_DIR/
 
 #expose core data port
 EXPOSE $APP_PORT
