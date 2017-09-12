@@ -17,6 +17,7 @@
  * @author: Jim White, Dell
  * @version: 1.0.0
  *******************************************************************************/
+
 package org.edgexfoundry.messaging;
 
 import java.io.IOException;

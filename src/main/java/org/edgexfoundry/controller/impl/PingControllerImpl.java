@@ -16,27 +16,33 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry;
+package org.edgexfoundry.controller;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.edgexfoundry.exception.controller.ServiceException;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-@EnableScheduling
-@Component
-public class HeartBeat {
+@RestController
+@RequestMapping("/api/v1/ping")
+public class PingController {
 
   private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
-      org.edgexfoundry.support.logging.client.EdgeXLoggerFactory.getEdgeXLogger(HeartBeat.class);
+      org.edgexfoundry.support.logging.client.EdgeXLoggerFactory
+          .getEdgeXLogger(PingController.class);
 
-  @Value("${heart.beat.msg}")
-  private String heartBeatMsg;
-
-  @Scheduled(fixedRateString = "${heart.beat.time}")
-  public void pulse() {
-    logger.info(heartBeatMsg);
+  /**
+   * Test service providing an indication that the service is available.
+   * 
+   * @throws ServcieException (HTTP 503) for unknown or unanticipated issues
+   */
+  @RequestMapping(method = RequestMethod.GET)
+  public String ping() {
+    try {
+      return "pong";
+    } catch (Exception e) {
+      logger.error("Error on ping:  " + e.getMessage());
+      throw new ServiceException(e);
+    }
   }
-
-
 }
