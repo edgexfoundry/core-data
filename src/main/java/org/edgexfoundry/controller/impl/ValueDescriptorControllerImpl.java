@@ -16,12 +16,14 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry.controller;
+package org.edgexfoundry.controller.impl;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.edgexfoundry.controller.DeviceClient;
+import org.edgexfoundry.controller.ValueDescriptorController;
 import org.edgexfoundry.dao.ReadingRepository;
 import org.edgexfoundry.dao.ValueDescriptorRepository;
 import org.edgexfoundry.domain.common.ValueDescriptor;
@@ -45,15 +47,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/valuedescriptor")
-public class ValueDescriptorController {
+public class ValueDescriptorControllerImpl implements ValueDescriptorController {
   // TODO - someday, on adds and updates, check min, max values for validity.
   // Check default is within min/max.
   // TODO - someday, check meta data to make sure device report does not
   // reference value descriptor on delete or change of name
 
-  private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
+  private static final String ERR_GETTING = "Error getting value descriptor:  ";
+
+  private static final org.edgexfoundry.support.logging.client.EdgeXLogger logger =
       org.edgexfoundry.support.logging.client.EdgeXLoggerFactory
-          .getEdgeXLogger(ValueDescriptorController.class);
+          .getEdgeXLogger(ValueDescriptorControllerImpl.class);
 
   @Autowired
   ValueDescriptorRepository valDescRepos;
@@ -85,16 +89,17 @@ public class ValueDescriptorController {
    *         404) if not found by id.
    */
   @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+  @Override
   public ValueDescriptor valueDescriptor(@PathVariable String id) {
     try {
-      ValueDescriptor d = valDescRepos.findOne(id);
-      if (d == null)
+      ValueDescriptor valuDes = valDescRepos.findOne(id);
+      if (valuDes == null)
         throw new NotFoundException(ValueDescriptor.class.toString(), id);
-      return d;
+      return valuDes;
     } catch (NotFoundException nfE) {
       throw nfE;
     } catch (Exception e) {
-      logger.error("Error getting value descriptor:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -110,6 +115,7 @@ public class ValueDescriptorController {
    *         current max limit
    */
   @RequestMapping(method = RequestMethod.GET)
+  @Override
   public List<ValueDescriptor> valueDescriptors() {
     try {
       if (valDescRepos.count() > maxLimit)
@@ -119,7 +125,7 @@ public class ValueDescriptorController {
     } catch (LimitExceededException lE) {
       throw lE;
     } catch (Exception e) {
-      logger.error("Error getting value descriptor:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -133,16 +139,17 @@ public class ValueDescriptorController {
    * @throws ServcieException (HTTP 503) for unknown or unanticipated issues
    */
   @RequestMapping(value = "/name/{name:.+}", method = RequestMethod.GET)
+  @Override
   public ValueDescriptor valueDescriptorByName(@PathVariable String name) {
     try {
-      ValueDescriptor v = valDescRepos.findByName(name);
-      if (v == null)
+      ValueDescriptor valuDes = valDescRepos.findByName(name);
+      if (valuDes == null)
         throw new NotFoundException(ValueDescriptor.class.toString(), name);
-      return v;
+      return valuDes;
     } catch (NotFoundException nfE) {
       throw nfE;
     } catch (Exception e) {
-      logger.error("Error getting value descriptor:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -156,11 +163,12 @@ public class ValueDescriptorController {
    * @throws ServcieException (HTTP 503) for unknown or unanticipated issues
    */
   @RequestMapping(value = "/uomlabel/{uomLabel:.+}", method = RequestMethod.GET)
-  public List<ValueDescriptor> valueDescriptorByUOMLabel(@PathVariable String uomLabel) {
+  @Override
+  public List<ValueDescriptor> valueDescriptorByUoMLabel(@PathVariable String uomLabel) {
     try {
       return valDescRepos.findByUomLabel(uomLabel);
     } catch (Exception e) {
-      logger.error("Error getting value descriptor:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -174,12 +182,13 @@ public class ValueDescriptorController {
    * @throws ServcieException (HTTP 503) for unknown or unanticipated issues
    */
   @RequestMapping(value = "/label/{label:.+}", method = RequestMethod.GET)
+  @Override
   public List<ValueDescriptor> valueDescriptorByLabel(@PathVariable String label) {
     try {
-      Query q = new Query(Criteria.where("labels").all(label));
-      return template.find(q, ValueDescriptor.class);
+      Query query = new Query(Criteria.where("labels").all(label));
+      return template.find(query, ValueDescriptor.class);
     } catch (Exception e) {
-      logger.error("Error getting value descriptor:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -197,12 +206,13 @@ public class ValueDescriptorController {
    * @throws NotFoundException (HTTP 404) for device not found by name
    */
   @RequestMapping(value = "/devicename/{name:.+}", method = RequestMethod.GET)
+  @Override
   public List<ValueDescriptor> valueDescriptorsForDeviceByName(@PathVariable String name) {
     try {
-      Device d = deviceClient.deviceForName(name);
-      Set<String> vdNames =
-          d.getProfile().getCommands().stream().map((Command c) -> c.associatedValueDescriptors())
-              .flatMap(l -> l.stream()).collect(Collectors.toSet());
+      Device device = deviceClient.deviceForName(name);
+      Set<String> vdNames = device.getProfile().getCommands().stream()
+          .map((Command cmd) -> cmd.associatedValueDescriptors()).flatMap(l -> l.stream())
+          .collect(Collectors.toSet());
       return vdNames.stream().map(s -> this.valDescRepos.findByName(s))
           .collect(Collectors.toList());
     } catch (javax.ws.rs.NotFoundException nfE) {
@@ -226,12 +236,13 @@ public class ValueDescriptorController {
    * @throws NotFoundException (HTTP 404) for device not found by id
    */
   @RequestMapping(value = "/deviceid/{id}", method = RequestMethod.GET)
+  @Override
   public List<ValueDescriptor> valueDescriptorsForDeviceById(@PathVariable String id) {
     try {
-      Device d = deviceClient.device(id);
-      Set<String> vdNames =
-          d.getProfile().getCommands().stream().map((Command c) -> c.associatedValueDescriptors())
-              .flatMap(l -> l.stream()).collect(Collectors.toSet());
+      Device device = deviceClient.device(id);
+      Set<String> vdNames = device.getProfile().getCommands().stream()
+          .map((Command cmd) -> cmd.associatedValueDescriptors()).flatMap(l -> l.stream())
+          .collect(Collectors.toSet());
       return vdNames.stream().map(s -> this.valDescRepos.findByName(s))
           .collect(Collectors.toList());
     } catch (javax.ws.rs.NotFoundException nfE) {
@@ -254,6 +265,7 @@ public class ValueDescriptorController {
    * @throws DataValidationException (HTTP 409) if the format string is not valid or name not unique
    */
   @RequestMapping(method = RequestMethod.POST)
+  @Override
   public String add(@RequestBody ValueDescriptor valueDescriptor) {
     if (!validateFormatString(valueDescriptor))
       throw new DataValidationException(
@@ -284,6 +296,7 @@ public class ValueDescriptorController {
    * @throws NotFoundException (HTTP 404) when the value descriptor cannot be found by the id
    */
   @RequestMapping(method = RequestMethod.PUT)
+  @Override
   public boolean update(@RequestBody ValueDescriptor valueDescriptor2) {
     try {
       ValueDescriptor valueDescriptor =
@@ -321,6 +334,7 @@ public class ValueDescriptorController {
    * @throws NotFoundException (HTTP 404) when the value descriptor cannot be found by the id
    */
   @RequestMapping(value = "/id/{id}", method = RequestMethod.DELETE)
+  @Override
   public boolean delete(@PathVariable String id) {
     try {
       ValueDescriptor valueDescriptor = valDescRepos.findOne(id);
@@ -354,6 +368,7 @@ public class ValueDescriptorController {
    * @throws NotFoundException (HTTP 404) when the value descriptor cannot be found by the id
    */
   @RequestMapping(value = "/name/{name:.+}", method = RequestMethod.DELETE)
+  @Override
   public boolean deleteByName(@PathVariable String name) {
     try {
       ValueDescriptor valueDescriptor = valDescRepos.findByName(name);
@@ -428,7 +443,7 @@ public class ValueDescriptorController {
   }
 
   private boolean validateFormatString(ValueDescriptor valueDescriptor) {
-    if ("".equals(valueDescriptor) || (valueDescriptor.getFormatting() == null))
+    if ("".equals(valueDescriptor.getFormatting()) || (valueDescriptor.getFormatting() == null))
       return true;
     else
       return valueDescriptor.getFormatting().matches(formatSpecifier);

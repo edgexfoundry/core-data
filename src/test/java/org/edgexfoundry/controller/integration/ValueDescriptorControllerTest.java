@@ -41,7 +41,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import org.edgexfoundry.Application;
-import org.edgexfoundry.controller.ValueDescriptorController;
+import org.edgexfoundry.controller.impl.ValueDescriptorControllerImpl;
 import org.edgexfoundry.dao.ReadingRepository;
 import org.edgexfoundry.dao.ValueDescriptorRepository;
 import org.edgexfoundry.domain.common.IoTType;
@@ -75,10 +75,10 @@ public class ValueDescriptorControllerTest {
   private static final String UPDATE_STRING = "foo";
   private static final String UPDATE_FMT_STRING = "%s";
   private static final String[] UPDATE_STRING_ARRAY = {"foo", "bar"};
-  private static final String MAXLIMIT = "maxLimit";
+  private static final String MAX_LIMIT = "maxLimit";
 
   @Autowired
-  ValueDescriptorController controller;
+  ValueDescriptorControllerImpl controller;
 
   @Autowired
   ValueDescriptorRepository repos;
@@ -104,7 +104,7 @@ public class ValueDescriptorControllerTest {
   public void cleanup() throws Exception {
     resetControllerRepos();
     resetControllerMongoTemplate();
-    resetControllerMAXLIMIT();
+    resetControllerMaxLimit();
     repos.deleteAll();
     readingRepos.deleteAll();
     assertNull("ValueDescriptor not deleted as part of cleanup", repos.findOne(testValDescId));
@@ -143,7 +143,7 @@ public class ValueDescriptorControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testValueDescriptorsMaxLimitExceed() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.valueDescriptors();
   }
 
@@ -166,7 +166,7 @@ public class ValueDescriptorControllerTest {
 
   @Test
   public void testValueDescriptorByUOMLabel() {
-    List<ValueDescriptor> valueDescriptors = controller.valueDescriptorByUOMLabel(TEST_UOMLABEL);
+    List<ValueDescriptor> valueDescriptors = controller.valueDescriptorByUoMLabel(TEST_UOMLABEL);
     assertEquals("Find by UOM label not returning a list with one value descriptor", 1,
         valueDescriptors.size());
     checkTestData(valueDescriptors.get(0), testValDescId);
@@ -176,13 +176,13 @@ public class ValueDescriptorControllerTest {
   public void testValueDescriptorByUOMLabelWithUnknownUOM() {
     assertEquals(
         "Controller is returning something other than empty list with an unknown uom label", 0,
-        controller.valueDescriptorByUOMLabel("unknownuomlabel").size());
+        controller.valueDescriptorByUoMLabel("unknownuomlabel").size());
   }
 
   @Test(expected = ServiceException.class)
   public void testValueDescriptorByUOMLabelException() throws Exception {
     unsetControllerRepos();
-    controller.valueDescriptorByUOMLabel(TEST_UOMLABEL);
+    controller.valueDescriptorByUoMLabel(TEST_UOMLABEL);
   }
 
   @Test
@@ -196,7 +196,7 @@ public class ValueDescriptorControllerTest {
   @Test
   public void testValueDescriptorByUOMLabelWithUnknownLabel() {
     assertEquals("Controller is returning something other than empty list with an unknown label", 0,
-        controller.valueDescriptorByUOMLabel("unknownlabel").size());
+        controller.valueDescriptorByUoMLabel("unknownlabel").size());
   }
 
   @Test(expected = ServiceException.class)
@@ -437,17 +437,17 @@ public class ValueDescriptorControllerTest {
   }
 
   // use Java reflection to unset controller's tempalte
-  private void unsetControllerMAXLIMIT() throws Exception {
+  private void unsetControllerMaxLimit() throws Exception {
     Class<?> controllerClass = controller.getClass();
-    Field temp = controllerClass.getDeclaredField(MAXLIMIT);
+    Field temp = controllerClass.getDeclaredField(MAX_LIMIT);
     temp.setAccessible(true);
     temp.set(controller, 0);
   }
 
   // use Java reflection to reset controller's template
-  private void resetControllerMAXLIMIT() throws Exception {
+  private void resetControllerMaxLimit() throws Exception {
     Class<?> controllerClass = controller.getClass();
-    Field temp = controllerClass.getDeclaredField(MAXLIMIT);
+    Field temp = controllerClass.getDeclaredField(MAX_LIMIT);
     temp.setAccessible(true);
     temp.set(controller, 1000);
   }

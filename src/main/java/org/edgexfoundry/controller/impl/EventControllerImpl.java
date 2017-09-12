@@ -16,12 +16,14 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry.controller;
+package org.edgexfoundry.controller.impl;
 
 import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.edgexfoundry.controller.DeviceClient;
+import org.edgexfoundry.controller.EventController;
 import org.edgexfoundry.dao.EventRepository;
 import org.edgexfoundry.dao.ReadingRepository;
 import org.edgexfoundry.dao.ScrubDao;
@@ -45,14 +47,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/event")
-public class EventController {
+public class EventControllerImpl implements EventController {
   // TODO - handle DeviceManager
   // TODO - someday, check each reading values match value descriptor per
   // reading's name on add
 
-  private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
+  private static final String ERR_GETTING = "Error getting events:  ";
+
+  private static final String LIMIT_ON_EVENT = "Event";
+
+  private static final String SORT_CREATED = "created";
+
+  private static final org.edgexfoundry.support.logging.client.EdgeXLogger logger =
       org.edgexfoundry.support.logging.client.EdgeXLoggerFactory
-          .getEdgeXLogger(EventController.class);
+          .getEdgeXLogger(EventControllerImpl.class);
 
   @Autowired
   ReadingRepository readingRepos;
@@ -94,6 +102,7 @@ public class EventController {
    *         404) if an event cannot be found by the id
    */
   @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+  @Override
   public Event event(@PathVariable String id) {
     try {
       Event e = eventRepos.findOne(id);
@@ -118,27 +127,57 @@ public class EventController {
    * @throws LimitExceededException (HTTP 413) if the number of events exceeds the current max limit
    */
   @RequestMapping(method = RequestMethod.GET)
+  @Override
   public List<Event> events() {
     if (eventRepos != null && eventRepos.count() > maxLimit)
-      throw new LimitExceededException("Event");
+      throw new LimitExceededException(LIMIT_ON_EVENT);
     try {
       Sort sort = new Sort(Sort.Direction.DESC, "_id");
       return eventRepos.findAll(sort);
     } catch (Exception e) {
-      logger.error("Error getting events:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
+      throw new ServiceException(e);
+    }
+  }
+
+  /**
+   * Return all events between a given begin and end date/time (in the form of longs).
+   * LimitExceededException (HTTP 413) if the number of events exceeds the current max limit.
+   * ServiceException (HTTP 503) for unknown or unanticipated issues.
+   * 
+   * @param start - start date in long form
+   * @param end - end date in long form
+   * @param limit - maximum number of events to fetch, must be < max limit
+   * @return list of events between the specified dates
+   * @throws ServiceException (HTTP 503) for unknown or unanticipated issues
+   * @throws LimitExceededException (HTTP 413) if the number of events exceeds the current max limit
+   */
+  @RequestMapping(value = "/{start}/{end}/{limit}", method = RequestMethod.GET)
+  @Override
+  public List<Event> events(@PathVariable long start, @PathVariable long end,
+      @PathVariable int limit) {
+    if (limit > maxLimit)
+      throw new LimitExceededException(LIMIT_ON_EVENT);
+    try {
+      PageRequest request;
+      request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, SORT_CREATED));
+      return eventRepos.findByCreatedBetween(start, end, request).getContent();
+    } catch (Exception e) {
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
 
   /**
    * Return a count of the number of events in core data for a given device (identified by database
-   * or unique name)
+   * or unique name).
    * 
    * @param deviceId - the id (database generated id) or name of the device associated to events
    * 
    * @return long - a count of total events in core data for the given device
    */
   @RequestMapping(value = "/count/{deviceId:.+}", method = RequestMethod.GET)
+  @Override
   public long eventCountForDevice(@PathVariable String deviceId) {
     try {
       return eventRepos.findByDevice(deviceId).size();
@@ -149,11 +188,12 @@ public class EventController {
   }
 
   /**
-   * Return a count of the number of events in core data
+   * Return a count of the number of events in core data.
    * 
    * @return long - a count of total events in core data
    */
   @RequestMapping(value = "/count", method = RequestMethod.GET)
+  @Override
   public long eventCount() {
     try {
       return eventRepos.count();
@@ -177,60 +217,35 @@ public class EventController {
    * @throws LimitExceededException (HTTP 413) if the number of events exceeds the current max limit
    */
   @RequestMapping(value = "/device/{deviceId:.+}/{limit}", method = RequestMethod.GET)
+  @Override
   public List<Event> eventsForDevice(@PathVariable String deviceId, @PathVariable int limit) {
     checkDevice(deviceId);
     if (limit > maxLimit)
-      throw new LimitExceededException("Event");
+      throw new LimitExceededException(LIMIT_ON_EVENT);
     try {
       PageRequest request;
-      request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, "created"));
+      request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, SORT_CREATED));
       return eventRepos.findByDevice(deviceId, request).getContent();
     } catch (Exception e) {
-      logger.error("Error getting events:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
 
   @RequestMapping(value = "/device/{deviceId:.+}/valuedescriptor/{valuedescriptor:.+}/{limit}")
+  @Override
   public List<Reading> readingsForDeviceAndValueDescriptor(@PathVariable String deviceId,
       @PathVariable String valuedescriptor, @PathVariable int limit) {
     checkDevice(deviceId);
     if (limit > maxLimit)
-      throw new LimitExceededException("Event");
+      throw new LimitExceededException(LIMIT_ON_EVENT);
     try {
-      PageRequest request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, "created"));
+      PageRequest request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, SORT_CREATED));
       List<Event> events = eventRepos.findByDevice(deviceId, request).getContent();
       return events.stream().flatMap(e -> e.getReadings().stream())
           .filter(r -> r.getName().equals(valuedescriptor)).collect(Collectors.toList());
     } catch (Exception e) {
       logger.error("Error getting readings for device and value descriptor:  " + e.getMessage());
-      throw new ServiceException(e);
-    }
-  }
-
-  /**
-   * Return all events between a given begin and end date/time (in the form of longs).
-   * LimitExceededException (HTTP 413) if the number of events exceeds the current max limit.
-   * ServiceException (HTTP 503) for unknown or unanticipated issues.
-   * 
-   * @param start - start date in long form
-   * @param end - end date in long form
-   * @param limit - maximum number of events to fetch, must be < max limit
-   * @return list of events between the specified dates
-   * @throws ServiceException (HTTP 503) for unknown or unanticipated issues
-   * @throws LimitExceededException (HTTP 413) if the number of events exceeds the current max limit
-   */
-  @RequestMapping(value = "/{start}/{end}/{limit}", method = RequestMethod.GET)
-  public List<Event> events(@PathVariable long start, @PathVariable long end,
-      @PathVariable int limit) {
-    if (limit > maxLimit)
-      throw new LimitExceededException("Event");
-    try {
-      PageRequest request;
-      request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, "created"));
-      return eventRepos.findByCreatedBetween(start, end, request).getContent();
-    } catch (Exception e) {
-      logger.error("Error getting events:  " + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -248,25 +263,23 @@ public class EventController {
    *         contains a non-existent value descriptor.
    */
   @RequestMapping(method = RequestMethod.POST)
+  @Override
   public String add(@RequestBody Event event) {
-    // long pretime=0;
     checkDevice(event.getDevice());
     try {
       if (persistData) {
-        for (Reading reading : event.getReadings()) {
-          if (valDescRepos.findByName(reading.getName()) == null)
-            throw new DataValidationException("Non-existent value descriptor specified in reading");
-          readingRepos.save(reading);
+        if (event.getReadings() != null) {
+          for (Reading reading : event.getReadings()) {
+            if (valDescRepos.findByName(reading.getName()) == null)
+              throw new DataValidationException(
+                  "Non-existent value descriptor specified in reading");
+            readingRepos.save(reading);
+          }
         }
-        // pretime = System.currentTimeMillis();
         eventRepos.save(event);
       } else {
         event.setId("unsaved");
       }
-      // long nowTime = System.currentTimeMillis();
-      // logger.error("--->" + event.getId() + " topersist@ " +
-      // (nowTime-pretime));
-      // logger.error("--->" + event.getId() + " persist@ " + nowTime);
       tasker.putEventOnQueue(event);
       tasker.updateDeviceLastReportedConnected(event.getDevice());
       tasker.updateDeviceServiceLastReportedConnected(event.getDevice());
@@ -291,6 +304,7 @@ public class EventController {
    * @throws NotFoundException (HTTP 404) when the event cannot be found by the id
    */
   @RequestMapping(value = "/id/{id}", method = RequestMethod.DELETE)
+  @Override
   public boolean delete(@PathVariable String id) {
     try {
       Event event = eventRepos.findOne(id);
@@ -319,6 +333,7 @@ public class EventController {
    * @throws ServiceException (HTTP 503) for unknown or unanticipated issues
    */
   @RequestMapping(value = "/device/{deviceId:.+}", method = RequestMethod.DELETE)
+  @Override
   public int deleteByDevice(@PathVariable String deviceId) {
     checkDevice(deviceId);
     try {
@@ -342,6 +357,7 @@ public class EventController {
    * @throws NotFoundException (HTTP 404) when the event cannot be found by the id
    */
   @RequestMapping(method = RequestMethod.PUT)
+  @Override
   public boolean update(@RequestBody Event event2) {
     try {
       Event event = eventRepos.findOne(event2.getId());
@@ -381,16 +397,20 @@ public class EventController {
    * @throws NotFoundException (HTTP 404) when the event cannot be found by the id
    */
   @RequestMapping(value = "/id/{id}", method = RequestMethod.PUT)
+  @Override
   public boolean markPushed(@PathVariable String id) {
     try {
       Event event = eventRepos.findOne(id);
       if (event != null) {
         long now = Calendar.getInstance().getTimeInMillis();
-        event.markPushed(now);
-        for (Reading reading : event.getReadings()) {
-          if (valDescRepos.findByName(reading.getName()) == null)
-            throw new DataValidationException("Non-existent value descriptor specified in reading");
-          readingRepos.save(reading);
+        if (event.getReadings() != null) {
+          event.markPushed(now);
+          for (Reading reading : event.getReadings()) {
+            if (valDescRepos.findByName(reading.getName()) == null)
+              throw new DataValidationException(
+                  "Non-existent value descriptor specified in reading");
+            readingRepos.save(reading);
+          }
         }
         eventRepos.save(event);
         return true;
@@ -415,6 +435,7 @@ public class EventController {
    * @throws ServiceException (HTTP 503) for unknown or unanticipated issues
    */
   @RequestMapping(value = "/scrub", method = RequestMethod.DELETE)
+  @Override
   public long scrubPushedEvents() {
     try {
       return scrubDao.scrubPushedEvents();
@@ -431,6 +452,7 @@ public class EventController {
    * @return boolean indicating success of the operation.
    */
   @RequestMapping(value = "/scruball", method = RequestMethod.DELETE)
+  @Override
   public boolean scrubAllEventsReadings() {
     try {
       readingRepos.deleteAll();
@@ -452,6 +474,7 @@ public class EventController {
    * 
    */
   @RequestMapping(value = "/removeold/age/{age}", method = RequestMethod.DELETE)
+  @Override
   public long scrubOldEvents(@PathVariable long age) {
     try {
       return scrubDao.scrubOldEvents(age);
@@ -484,7 +507,9 @@ public class EventController {
         logger.error("No device found for associated device id");
         throw new NotFoundException(Device.class.toString(), deviceId);
       }
-    } catch (javax.ws.rs.NotFoundException e) {
+    } catch (NotFoundException nE) {
+      throw nE;
+    } catch (Exception e) {
       logger.error(
           "Unknown issue when trying to find associated device for: " + deviceId + e.getMessage());
       throw new ServiceException(e);

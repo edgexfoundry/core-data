@@ -16,7 +16,7 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry.controller;
+package org.edgexfoundry.controller.impl;
 
 import java.util.Map;
 
@@ -34,9 +34,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 @RestController
 public class LocalErrorController implements ErrorController {
-  
+
   private static final String PATH = "/error";
-  
+
   @Value("${print.stacktrace:false}")
   private boolean printTraces;
 

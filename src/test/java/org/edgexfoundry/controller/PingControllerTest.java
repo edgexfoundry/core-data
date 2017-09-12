@@ -20,6 +20,7 @@ package org.edgexfoundry.controller;
 
 import static org.junit.Assert.assertEquals;
 
+import org.edgexfoundry.controller.impl.PingControllerImpl;
 import org.edgexfoundry.test.category.RequiresNone;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,11 +31,11 @@ public class PingControllerTest {
 
   private static final String PING_RESP = "pong";
 
-  private PingController controller;
+  private PingControllerImpl controller;
 
   @Before
   public void setup() {
-    controller = new PingController();
+    controller = new PingControllerImpl();
   }
 
   @Test

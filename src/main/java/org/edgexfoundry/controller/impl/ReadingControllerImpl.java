@@ -16,12 +16,14 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry.controller;
+package org.edgexfoundry.controller.impl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.edgexfoundry.controller.DeviceClient;
+import org.edgexfoundry.controller.ReadingController;
 import org.edgexfoundry.dao.EventRepository;
 import org.edgexfoundry.dao.ReadingRepository;
 import org.edgexfoundry.dao.ValueDescriptorRepository;
@@ -49,13 +51,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/reading")
-public class ReadingController {
+public class ReadingControllerImpl implements ReadingController {
 
   // TODO - someday check value against value desc, per name on adds/updates
 
-  private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
+  private static final String ERR_GETTING = "Error getting readings:  ";
+
+  private static final String LIMIT_ON_READING = "Reading";
+
+  private static final String SORT_CREATED = "created";
+
+  private static final org.edgexfoundry.support.logging.client.EdgeXLogger logger =
       org.edgexfoundry.support.logging.client.EdgeXLoggerFactory
-          .getEdgeXLogger(ReadingController.class);
+          .getEdgeXLogger(ReadingControllerImpl.class);
 
   @Autowired
   ReadingRepository readingRepos;
@@ -92,12 +100,13 @@ public class ReadingController {
    *         404) if a reading cannot be found by the id provided.
    */
   @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+  @Override
   public Reading reading(@PathVariable String id) {
     try {
-      Reading r = readingRepos.findOne(id);
-      if (r == null)
+      Reading reading = readingRepos.findOne(id);
+      if (reading == null)
         throw new NotFoundException(Reading.class.toString(), id);
-      return r;
+      return reading;
     } catch (NotFoundException nfE) {
       throw nfE;
     } catch (Exception e) {
@@ -117,28 +126,14 @@ public class ReadingController {
    *         limit
    */
   @RequestMapping(method = RequestMethod.GET)
+  @Override
   public List<Reading> readings() {
     if (readingRepos != null && readingRepos.count() > maxLimit)
-      throw new LimitExceededException("Reading");
+      throw new LimitExceededException(LIMIT_ON_READING);
     try {
       return readingRepos.findAll();
     } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
-      throw new ServiceException(e);
-    }
-  }
-
-  /**
-   * Return a count of the number of readings in core data
-   * 
-   * @return long - a count of total readings in core data
-   */
-  @RequestMapping(value = "/count", method = RequestMethod.GET)
-  public long readingCount() {
-    try {
-      return readingRepos.count();
-    } catch (Exception e) {
-      logger.error("Error getting reading count:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -158,21 +153,67 @@ public class ReadingController {
    *         limit
    */
   @RequestMapping(value = "/device/{deviceId}/{limit}", method = RequestMethod.GET)
+  @Override
   public List<Reading> readings(@PathVariable String deviceId, @PathVariable int limit) {
     if (limit > maxLimit)
-      throw new LimitExceededException("Reading");
+      throw new LimitExceededException(LIMIT_ON_READING);
     if (metaCheck
         && (deviceClient.deviceForName(deviceId) == null && deviceClient.device(deviceId) == null))
       throw new NotFoundException(Device.class.toString(), deviceId);
     try {
-      PageRequest request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, "created"));
+      PageRequest request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, SORT_CREATED));
       List<Event> events = eventRepos.findByDevice(deviceId, request).getContent();
       if (events == null || events.isEmpty())
         return new ArrayList<>();
       return events.stream().map((Event e) -> e.getReadings()).flatMap(l -> l.stream()).limit(limit)
           .sorted().collect(Collectors.toList());
     } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
+      throw new ServiceException(e);
+    }
+  }
+
+  /**
+   * Return a list of readings between two timestamps - limited by the number specified in the limit
+   * parameter. LimitExceededException (HTTP 413) if the number of readings exceeds the current max
+   * limit. ServiceException (HTTP 503) for unknown or unanticipated issues.
+   * 
+   * @param start - millisecond (long) timestamp of the beginning of the time range
+   * @param end - millisecond (long) timestamp of the end of the time rage
+   * @param limit - maximum number of readings to be allowed to be returned
+   * @return - list of matching readings in this range (limited by the limit parameter)
+   * @throws ServiceException (HTTP 503) for unknown or unanticipated issues
+   * @throws LimitExceededException (HTTP 413) if the number of readings exceeds the current max
+   *         limit
+   */
+  @RequestMapping(value = "/{start}/{end}/{limit}", method = RequestMethod.GET)
+  @Override
+  public List<Reading> readings(@PathVariable long start, @PathVariable long end,
+      @PathVariable int limit) {
+    if (limit > maxLimit)
+      throw new LimitExceededException(LIMIT_ON_READING);
+    try {
+      PageRequest request;
+      request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, SORT_CREATED));
+      return readingRepos.findByCreatedBetween(start, end, request).getContent();
+    } catch (Exception e) {
+      logger.error(ERR_GETTING + e.getMessage());
+      throw new ServiceException(e);
+    }
+  }
+
+  /**
+   * Return a count of the number of readings in core data
+   * 
+   * @return long - a count of total readings in core data
+   */
+  @RequestMapping(value = "/count", method = RequestMethod.GET)
+  @Override
+  public long readingCount() {
+    try {
+      return readingRepos.count();
+    } catch (Exception e) {
+      logger.error("Error getting reading count:  " + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -190,15 +231,16 @@ public class ReadingController {
    *         limit
    */
   @RequestMapping(value = "/name/{name:.+}/{limit}", method = RequestMethod.GET)
+  @Override
   public List<Reading> readingsByName(@PathVariable String name, @PathVariable int limit) {
     if (limit > maxLimit)
-      throw new LimitExceededException("Reading");
+      throw new LimitExceededException(LIMIT_ON_READING);
     try {
       PageRequest request =
-          new PageRequest(0, determineLimit(limit), new Sort(Sort.Direction.DESC, "created"));
+          new PageRequest(0, determineLimit(limit), new Sort(Sort.Direction.DESC, SORT_CREATED));
       return readingRepos.findByName(name, request).getContent();
     } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -217,16 +259,17 @@ public class ReadingController {
    *         limit
    */
   @RequestMapping(value = "/name/{name:.+}/device/{device:.+}/{limit}", method = RequestMethod.GET)
+  @Override
   public List<Reading> readingsByNameAndDevice(@PathVariable String name,
       @PathVariable String device, @PathVariable int limit) {
     if (limit > maxLimit)
-      throw new LimitExceededException("Reading");
+      throw new LimitExceededException(LIMIT_ON_READING);
     try {
       PageRequest request =
-          new PageRequest(0, determineLimit(limit), new Sort(Sort.Direction.DESC, "created"));
+          new PageRequest(0, determineLimit(limit), new Sort(Sort.Direction.DESC, SORT_CREATED));
       return readingRepos.findByNameAndDevice(name, device, request).getContent();
     } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -245,16 +288,17 @@ public class ReadingController {
    *         limit
    */
   @RequestMapping(value = "/uomlabel/{uomLabel:.+}/{limit}", method = RequestMethod.GET)
+  @Override
   public List<Reading> readingsByUomLabel(@PathVariable String uomLabel, @PathVariable int limit) {
     if (limit > maxLimit)
-      throw new LimitExceededException("Reading");
+      throw new LimitExceededException(LIMIT_ON_READING);
     try {
       List<ValueDescriptor> valDescs = valDescRepos.findByUomLabel(uomLabel);
       if (valDescs.isEmpty())
         return new ArrayList<>();
       return filterReadings(valDescs, determineLimit(limit));
     } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -273,16 +317,17 @@ public class ReadingController {
    *         limit
    */
   @RequestMapping(value = "/label/{label:.+}/{limit}", method = RequestMethod.GET)
+  @Override
   public List<Reading> readingsByLabel(@PathVariable String label, @PathVariable int limit) {
     if (limit > maxLimit)
-      throw new LimitExceededException("Reading");
+      throw new LimitExceededException(LIMIT_ON_READING);
     try {
       List<ValueDescriptor> valDescs = valDescRepos.findByLabelsIn(label);
       if (valDescs.isEmpty())
         return new ArrayList<>();
       return filterReadings(valDescs, determineLimit(limit));
     } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -302,44 +347,17 @@ public class ReadingController {
    *         limit
    */
   @RequestMapping(value = "/type/{type:.+}/{limit}", method = RequestMethod.GET)
+  @Override
   public List<Reading> readingsByType(@PathVariable String type, @PathVariable int limit) {
     if (limit > maxLimit)
-      throw new LimitExceededException("Reading");
+      throw new LimitExceededException(LIMIT_ON_READING);
     try {
       List<ValueDescriptor> valDescs = valDescRepos.findByType(IoTType.valueOf(type));
       if (valDescs.isEmpty())
         return new ArrayList<>();
       return filterReadings(valDescs, determineLimit(limit));
     } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
-      throw new ServiceException(e);
-    }
-  }
-
-  /**
-   * Return a list of readings between two timestamps - limited by the number specified in the limit
-   * parameter. LimitExceededException (HTTP 413) if the number of readings exceeds the current max
-   * limit. ServiceException (HTTP 503) for unknown or unanticipated issues.
-   * 
-   * @param start - millisecond (long) timestamp of the beginning of the time range
-   * @param end - millisecond (long) timestamp of the end of the time rage
-   * @param limit - maximum number of readings to be allowed to be returned
-   * @return - list of matching readings in this range (limited by the limit parameter)
-   * @throws ServiceException (HTTP 503) for unknown or unanticipated issues
-   * @throws LimitExceededException (HTTP 413) if the number of readings exceeds the current max
-   *         limit
-   */
-  @RequestMapping(value = "/{start}/{end}/{limit}", method = RequestMethod.GET)
-  public List<Reading> readings(@PathVariable long start, @PathVariable long end,
-      @PathVariable int limit) {
-    if (limit > maxLimit)
-      throw new LimitExceededException("Reading");
-    try {
-      PageRequest request;
-      request = new PageRequest(0, limit, new Sort(Sort.Direction.DESC, "created"));
-      return readingRepos.findByCreatedBetween(start, end, request).getContent();
-    } catch (Exception e) {
-      logger.error("Error getting readings:  " + e.getMessage());
+      logger.error(ERR_GETTING + e.getMessage());
       throw new ServiceException(e);
     }
   }
@@ -355,6 +373,7 @@ public class ReadingController {
    *         contains a non-existent value descriptor.
    */
   @RequestMapping(method = RequestMethod.POST)
+  @Override
   public String add(@RequestBody Reading reading) {
     if (valDescRepos.findByName(reading.getName()) == null)
       throw new DataValidationException("Non-existent value descriptor specified in reading");
@@ -384,6 +403,7 @@ public class ReadingController {
    *         reading.
    */
   @RequestMapping(method = RequestMethod.PUT)
+  @Override
   public boolean update(@RequestBody Reading reading2) {
     try {
       Reading reading = readingRepos.findOne(reading2.getId());
@@ -426,6 +446,7 @@ public class ReadingController {
    *         reading.
    */
   @RequestMapping(value = "/id/{id}", method = RequestMethod.DELETE)
+  @Override
   public boolean delete(@PathVariable String id) {
     try {
       Reading reading = readingRepos.findOne(id);

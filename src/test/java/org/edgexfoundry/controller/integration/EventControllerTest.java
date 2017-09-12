@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.edgexfoundry.Application;
-import org.edgexfoundry.controller.EventController;
+import org.edgexfoundry.controller.impl.EventControllerImpl;
 import org.edgexfoundry.dao.EventRepository;
 import org.edgexfoundry.dao.ReadingRepository;
 import org.edgexfoundry.dao.ScrubDao;
@@ -72,7 +72,7 @@ public class EventControllerTest {
   private static final String MAXLIMIT = "maxLimit";
 
   @Autowired
-  EventController controller;
+  EventControllerImpl controller;
 
   @Autowired
   EventRepository repos;
@@ -159,7 +159,7 @@ public class EventControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testEventsMaxLimitExceeded() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.events();
   }
 
@@ -197,7 +197,7 @@ public class EventControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testEventsByDeviceMaxLimitExceeded() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.eventsForDevice(TEST_DEVICE_ID, 10);
   }
 
@@ -232,7 +232,7 @@ public class EventControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testEventsByTimeMaxLimitExceeded() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     long now = new Date().getTime();
     // between yesterday and tomorrow
     controller.events(now - 86400000, now + 86400000, 10);
@@ -400,7 +400,7 @@ public class EventControllerTest {
   @Test
   public void testScrubOldEvents() throws InterruptedException {
     Thread.sleep(2000); // allow record to age so it can be removed
-    assertEquals("Old c events not scrubbed properly", 1, controller.scrubOldEvents(1));
+    assertEquals("Old events not scrubbed properly", 1, controller.scrubOldEvents(1));
   }
 
   @Test
@@ -435,7 +435,7 @@ public class EventControllerTest {
   }
 
   // use Java reflection to unset controller's tempalte
-  private void unsetControllerMAXLIMIT() throws Exception {
+  private void unsetControllerMaxLimit() throws Exception {
     Class<?> controllerClass = controller.getClass();
     Field temp = controllerClass.getDeclaredField(MAXLIMIT);
     temp.setAccessible(true);

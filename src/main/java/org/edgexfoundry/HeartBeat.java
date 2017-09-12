@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class HeartBeat {
 
-  private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
+  private static final org.edgexfoundry.support.logging.client.EdgeXLogger logger =
       org.edgexfoundry.support.logging.client.EdgeXLoggerFactory.getEdgeXLogger(HeartBeat.class);
 
   @Value("${heart.beat.msg}")
@@ -37,6 +37,5 @@ public class HeartBeat {
   public void pulse() {
     logger.info(heartBeatMsg);
   }
-
 
 }
