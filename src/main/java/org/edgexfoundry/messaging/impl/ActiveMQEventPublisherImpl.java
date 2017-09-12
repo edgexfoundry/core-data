@@ -16,7 +16,7 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry.messaging;
+package org.edgexfoundry.messaging.impl;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -24,6 +24,7 @@ import javax.jms.ObjectMessage;
 import javax.jms.Session;
 
 import org.edgexfoundry.domain.core.Event;
+import org.edgexfoundry.messaging.EventPublisher;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
 
@@ -32,11 +33,11 @@ import org.springframework.jms.core.MessageCreator;
  * need to change the spring-config.xml file to use this publisher versus the ZeroMQ publisher.
  * 
  */
-public class ActiveMQEventPublisher implements EventPublisher {
+public class ActiveMQEventPublisherImpl implements EventPublisher {
 
-  private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
+  private static final org.edgexfoundry.support.logging.client.EdgeXLogger logger =
       org.edgexfoundry.support.logging.client.EdgeXLoggerFactory
-          .getEdgeXLogger(ActiveMQEventPublisher.class);
+          .getEdgeXLogger(ActiveMQEventPublisherImpl.class);
 
   private JmsTemplate template;
 

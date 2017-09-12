@@ -43,11 +43,11 @@
 	<bean id="jmsMessagingTemplate" class="org.springframework.jms.core.JmsTemplate"
 		p:connectionFactory-ref="jmsFactory" p:defaultDestination-ref="internal_destination" />
 
-	<bean id="eventProducer" class="org.edgexfoundry.messaging.ActiveMQEventPublisher"> 
+	<bean id="eventProducer" class="org.edgexfoundry.messaging.impl.ActiveMQEventPublisherImpl"> 
 		<property name="template" ref="jmsMessagingTemplate" /> </bean> 
 -->
 
-	<bean id="zeroMQEventProducer" class="org.edgexfoundry.messaging.ZeroMQEventPublisher">
+	<bean id="zeroMQEventProducer" class="org.edgexfoundry.messaging.impl.ZeroMQEventPublisherImpl">
 		<property name="zeromqAddressPort" value="${zeromq.addressport}" />
 	</bean>
 

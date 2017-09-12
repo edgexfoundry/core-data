@@ -35,7 +35,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.edgexfoundry.Application;
-import org.edgexfoundry.controller.ReadingController;
+import org.edgexfoundry.controller.impl.ReadingControllerImpl;
 import org.edgexfoundry.dao.EventRepository;
 import org.edgexfoundry.dao.ReadingRepository;
 import org.edgexfoundry.dao.ValueDescriptorRepository;
@@ -69,10 +69,10 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @Category({RequiresMongoDB.class, RequiresSpring.class, RequiresWeb.class})
 public class ReadingControllerTest {
 
-  private static final String MAXLIMIT = "maxLimit";
+  private static final String MAX_LIMIT = "maxLimit";
 
   @Autowired
-  ReadingController controller;
+  ReadingControllerImpl controller;
 
   @Autowired
   ValueDescriptorRepository valDescRepos;
@@ -107,7 +107,7 @@ public class ReadingControllerTest {
     resetControllerEventRepos();
     resetControllerRepos();
     resetControllerMongoTemplate();
-    resetControllerMAXLIMIT();
+    resetControllerMaxLimit();
     repos.deleteAll();
     valDescRepos.deleteAll();
     eventRepos.deleteAll();
@@ -152,7 +152,7 @@ public class ReadingControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testReadingsMaxLimitExceed() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readings();
   }
 
@@ -184,7 +184,7 @@ public class ReadingControllerTest {
     Event event = EventData.newTestInstance();
     event.setReadings(repos.findAll());
 
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readings(EventData.TEST_DEVICE_ID, 10);
   }
 
@@ -203,7 +203,7 @@ public class ReadingControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testReadingsByNameMaxLimitExceed() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readingsByName(ReadingData.TEST_NAME, 10);
   }
 
@@ -224,7 +224,7 @@ public class ReadingControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testReadingsByNameAndDeviceMaxLimitExceed() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readingsByNameAndDevice(ReadingData.TEST_NAME, EventData.TEST_DEVICE_ID, 10);
   }
 
@@ -250,7 +250,7 @@ public class ReadingControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testReadingsByUomLabelMaxLimitExceed() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readingsByUomLabel(TEST_UOMLABEL, 10);
   }
 
@@ -276,7 +276,7 @@ public class ReadingControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testReadingsByLabelMaxLimitExceed() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readingsByUomLabel(TEST_LABELS[0], 10);
   }
 
@@ -302,7 +302,7 @@ public class ReadingControllerTest {
 
   @Test(expected = LimitExceededException.class)
   public void testReadingsByTypeMaxLimitExceed() throws Exception {
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readingsByType(TEST_TYPE.toString(), 10);
   }
 
@@ -336,7 +336,7 @@ public class ReadingControllerTest {
   @Test(expected = LimitExceededException.class)
   public void testReadingsByTimeMaxLimitExceed() throws Exception {
     long now = new Date().getTime();
-    unsetControllerMAXLIMIT();
+    unsetControllerMaxLimit();
     controller.readings(now - 86400000, now + 86400000, 10);
   }
 
@@ -468,17 +468,17 @@ public class ReadingControllerTest {
   }
 
   // use Java reflection to unset controller's tempalte
-  private void unsetControllerMAXLIMIT() throws Exception {
+  private void unsetControllerMaxLimit() throws Exception {
     Class<?> controllerClass = controller.getClass();
-    Field temp = controllerClass.getDeclaredField(MAXLIMIT);
+    Field temp = controllerClass.getDeclaredField(MAX_LIMIT);
     temp.setAccessible(true);
     temp.set(controller, 0);
   }
 
   // use Java reflection to reset controller's template
-  private void resetControllerMAXLIMIT() throws Exception {
+  private void resetControllerMaxLimit() throws Exception {
     Class<?> controllerClass = controller.getClass();
-    Field temp = controllerClass.getDeclaredField(MAXLIMIT);
+    Field temp = controllerClass.getDeclaredField(MAX_LIMIT);
     temp.setAccessible(true);
     temp.set(controller, 1000);
   }

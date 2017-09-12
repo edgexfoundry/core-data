@@ -26,7 +26,7 @@ import org.edgexfoundry.dao.EventRepository;
 import org.edgexfoundry.dao.ReadingRepository;
 import org.edgexfoundry.dao.ScrubDao;
 import org.edgexfoundry.messaging.EventPublisher;
-import org.edgexfoundry.messaging.ZeroMQEventPublisher;
+import org.edgexfoundry.messaging.impl.ZeroMQEventPublisherImpl;
 import org.edgexfoundry.test.category.RequiresMongoDB;
 import org.edgexfoundry.test.category.RequiresSpring;
 import org.edgexfoundry.test.category.RequiresWeb;
@@ -67,7 +67,7 @@ public class SpringConfigurationTest {
 
   @Test
   public void testEventProducterBeanExists() {
-    ZeroMQEventPublisher producer = (ZeroMQEventPublisher) ctx.getBean(EventPublisher.class);
+    ZeroMQEventPublisherImpl producer = (ZeroMQEventPublisherImpl) ctx.getBean(EventPublisher.class);
     assertNotNull("ZeroMQ Event Producer bean not available", producer);
   }
 

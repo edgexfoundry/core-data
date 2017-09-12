@@ -16,7 +16,7 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry.messaging;
+package org.edgexfoundry.messaging.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,17 +24,14 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 
 import org.edgexfoundry.domain.core.Event;
+import org.edgexfoundry.messaging.EventPublisher;
 import org.zeromq.ZMQ;
 
-/**
- * @author Jim
- *
- */
-public class ZeroMQEventPublisher implements EventPublisher {
+public class ZeroMQEventPublisherImpl implements EventPublisher {
 
-  private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
+  private static final org.edgexfoundry.support.logging.client.EdgeXLogger logger =
       org.edgexfoundry.support.logging.client.EdgeXLoggerFactory
-          .getEdgeXLogger(ZeroMQEventPublisher.class);
+          .getEdgeXLogger(ZeroMQEventPublisherImpl.class);
 
   private static final long PUB_UP_SLEEP = 1000;
 
@@ -54,9 +51,7 @@ public class ZeroMQEventPublisher implements EventPublisher {
       if (publisher == null)
         getPublisher();
       if (publisher != null) {
-        // logger.error("--->" + event.getId() + " sending@ " + System.currentTimeMillis());
         publisher.send(toByteArray(event));
-        // logger.error("--->" + event.getId() + " sent@ " + System.currentTimeMillis());
         logger.debug("Sent event to export with device id:  " + event.getDevice());
       } else
         logger.error("Event not sent to export with id:" + event.getId());
@@ -74,7 +69,6 @@ public class ZeroMQEventPublisher implements EventPublisher {
   }
 
   private void getPublisher() {
-    // logger.error("--->Getting Publisher");
     try {
       if (publisher == null) {
         publisher = context.socket(ZMQ.PUB);

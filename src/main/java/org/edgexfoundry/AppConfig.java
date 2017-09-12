@@ -46,15 +46,32 @@ import com.mongodb.ServerAddress;
 @EnableMongoAuditing
 public class AppConfig extends AbstractMongoConfiguration {
 
-  private @Value("${spring.data.mongodb.username}") String username;
-  private @Value("${spring.data.mongodb.password}") String password;
-  private @Value("${spring.data.mongodb.database}") String database;
-  private @Value("${spring.data.mongodb.host}") String host;
-  private @Value("${spring.data.mongodb.port}") int port;
-  private @Value("${spring.data.mongodb.connectTimeout}") int connectTimeout;
-  private @Value("${spring.data.mongodb.socketTimeout}") int socketTimeout;
-  private @Value("${spring.data.mongodb.maxWaitTime}") int maxWaitTime;
-  private @Value("${spring.data.mongodb.socketKeepAlive}") boolean socketKeepAlive;
+  @Value("${spring.data.mongodb.username}")
+  private String username;
+
+  @Value("${spring.data.mongodb.password}")
+  private String password;
+
+  @Value("${spring.data.mongodb.database}")
+  private String database;
+
+  @Value("${spring.data.mongodb.host}")
+  private String host;
+
+  @Value("${spring.data.mongodb.port}")
+  private int port;
+
+  @Value("${spring.data.mongodb.connectTimeout}")
+  private int connectTimeout;
+
+  @Value("${spring.data.mongodb.socketTimeout}")
+  private int socketTimeout;
+
+  @Value("${spring.data.mongodb.maxWaitTime}")
+  private int maxWaitTime;
+
+  @Value("${spring.data.mongodb.socketKeepAlive}")
+  private boolean socketKeepAlive;
 
   private MongoClient client;
 
@@ -67,10 +84,12 @@ public class AppConfig extends AbstractMongoConfiguration {
     return getClient();
   }
 
+  @Override
   public @Bean MongoDbFactory mongoDbFactory() throws Exception {
     return new SimpleMongoDbFactory(getClient(), getDatabaseName());
   }
 
+  @Override
   public @Bean MongoTemplate mongoTemplate() throws Exception {
     return new MongoTemplate(mongoDbFactory());
   }

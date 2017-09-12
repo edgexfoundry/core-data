@@ -16,10 +16,12 @@
  * @version: 1.0.0
  *******************************************************************************/
 
-package org.edgexfoundry.controller;
+package org.edgexfoundry.controller.impl;
 
 import java.util.Calendar;
 
+import org.edgexfoundry.controller.DeviceClient;
+import org.edgexfoundry.controller.DeviceServiceClient;
 import org.edgexfoundry.domain.core.Event;
 import org.edgexfoundry.domain.meta.Device;
 import org.edgexfoundry.domain.meta.DeviceService;
@@ -36,7 +38,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ThreadTasks {
 
-  private final static org.edgexfoundry.support.logging.client.EdgeXLogger logger =
+  private static final org.edgexfoundry.support.logging.client.EdgeXLogger logger =
       org.edgexfoundry.support.logging.client.EdgeXLoggerFactory.getEdgeXLogger(ThreadTasks.class);
 
   @Value("${addto.event.queue}")
@@ -70,8 +72,8 @@ public class ThreadTasks {
         device = deviceClient.device(deviceid);
       }
       if (device != null) {
-        Calendar c = Calendar.getInstance();
-        long time = c.getTimeInMillis();
+        Calendar calendar = Calendar.getInstance();
+        long time = calendar.getTimeInMillis();
         deviceClient.updateLastConnected(device.getId(), time);
         deviceClient.updateLastReported(device.getId(), time);
       } else
@@ -96,8 +98,8 @@ public class ThreadTasks {
         device = deviceClient.device(deviceid);
       }
       if (device != null) {
-        Calendar c = Calendar.getInstance();
-        long time = c.getTimeInMillis();
+        Calendar calendar = Calendar.getInstance();
+        long time = calendar.getTimeInMillis();
         DeviceService service = device.getService();
         if (service != null) {
           serviceClient.updateLastConnected(service.getId(), time);
