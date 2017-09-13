@@ -18,11 +18,33 @@
 
 package org.edgexfoundry.messaging;
 
+import java.io.IOException;
+
 import org.edgexfoundry.domain.core.Event;
+import org.edgexfoundry.messaging.impl.ZeroMQEventPublisherImpl;
+import org.edgexfoundry.test.category.RequiresNone;
+import org.edgexfoundry.test.data.EventData;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
-@FunctionalInterface
-public interface EventPublisher {
+@Category(RequiresNone.class)
+public class ZeroMQEventPublishingImplTest {
 
-  void sendEventMessage(final Event event);
+  private ZeroMQEventPublisherImpl publisher;
+
+  private Event event;
+
+  @Before
+  public void setup() {
+    publisher = new ZeroMQEventPublisherImpl();
+    event = new Event(EventData.TEST_DEVICE_ID);
+    publisher.setZeromqAddressPort("tcp://*:5563");
+  }
+
+  @Test
+  public void testSendEvent() throws InterruptedException, ClassNotFoundException, IOException {
+    publisher.sendEventMessage(event);
+  }
 
 }
