@@ -60,4 +60,9 @@ public interface ReadingRepository extends MongoRepository<Reading, String> {
 
   Page<Reading> findByNameAndDevice(String name, String device, Pageable pageable);
 
+	List<Reading> findByDevice(String device);
+
+	Page<Reading> findByDevice(String device, Pageable pageable);
+
+
 }
