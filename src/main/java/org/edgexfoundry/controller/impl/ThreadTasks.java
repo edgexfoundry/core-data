@@ -55,7 +55,6 @@ public class ThreadTasks {
 
   @Autowired
   DeviceClient deviceClient;
-  // TODO - handle DeviceManager
 
   @Autowired
   DeviceServiceClient serviceClient;
