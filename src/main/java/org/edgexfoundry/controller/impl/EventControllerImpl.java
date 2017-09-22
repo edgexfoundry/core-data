@@ -48,7 +48,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/event")
 public class EventControllerImpl implements EventController {
-  // TODO - handle DeviceManager
   // TODO - someday, check each reading values match value descriptor per
   // reading's name on add
 
