@@ -34,7 +34,7 @@
 		<zeromq.version>0.3.6</zeromq.version>
 		<core-domain.version>1.0.0-SNAPSHOT</core-domain.version>
 		<core-exception.version>1.0.0-SNAPSHOT</core-exception.version>
-		<metadata-client.version>1.0.0-SNAPSHOT</metadata-client.version>
+		<core-metadata-client.version>1.0.0-SNAPSHOT</core-metadata-client.version>
 		<core-test.version>1.0.0-SNAPSHOT</core-test.version>
 		<support-logging-client.version>1.0.0-SNAPSHOT</support-logging-client.version>
 		<assembley-plugin.version>2.5.5</assembley-plugin.version>
@@ -166,7 +166,7 @@
 		<dependency>
 			<groupId>org.edgexfoundry</groupId>
 			<artifactId>core-metadata-client</artifactId>
-			<version>${metadata-client.version}</version>
+			<version>${core-metadata-client.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.edgexfoundry</groupId>
