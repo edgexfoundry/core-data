@@ -1,7 +1,7 @@
-#v0.2 (10/20/2017)
-#Release Notes
+# v0.2 (10/20/2017)
+# Release Notes
 
-##Notable Changes
+## Notable Changes
 The Barcelona Release (v 0.2) of the Core Data micro service includes the following:
 * Application of Google Style Guidelines to the code base
 * Increase in unit/intergration tests from 630 tests to 965 tests
@@ -10,12 +10,12 @@ The Barcelona Release (v 0.2) of the Core Data micro service includes the follow
 * Added Dockerfile for creation of micro service targeted for ARM64 
 * Added interfaces for all Controller classes
 
-##Bug Fixes
+## Bug Fixes
 * Fix GET events by device with device id
 * Removed OS specific file path for logging file 
 * Provide option to include stack trace in log outputs
 
-##Pull Request/Commit Details
+## Pull Request/Commit Details
  - [#17](https://github.com/edgexfoundry/core-data/pull/17) - Remove staging plugin contributed by Jeremy Phelps ([JPWKU](https://github.com/JPWKU))
  - [#16](https://github.com/edgexfoundry/core-data/pull/16) - Fixes POM Client Version Reference contributed by Tyler Cox ([trcox](https://github.com/trcox))
  - [#15](https://github.com/edgexfoundry/core-data/issues/15) - Minor - POM property should reference <core-metadata-client> (line 37)?
