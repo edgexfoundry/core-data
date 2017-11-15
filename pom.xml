@@ -21,7 +21,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.edgexfoundry</groupId>
   <artifactId>core-data</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.5.0-SNAPSHOT</version>
   <name>EdgeX Foundry Core Data Micro Service</name>
   <description>EdgeX Foundry Core Data Micro Service</description>
   
@@ -32,11 +32,11 @@
 		<xbean.version>4.4</xbean.version>
 		<paho.version>1.0.2</paho.version>
 		<zeromq.version>0.3.6</zeromq.version>
-		<core-domain.version>0.2.0-SNAPSHOT</core-domain.version>
-		<core-exception.version>0.2.0-SNAPSHOT</core-exception.version>
-		<core-metadata-client.version>0.2.0-SNAPSHOT</core-metadata-client.version>
-		<core-test.version>0.2.0-SNAPSHOT</core-test.version>
-		<support-logging-client.version>0.2.0-SNAPSHOT</support-logging-client.version>
+		<core-domain.version>0.5.0-SNAPSHOT</core-domain.version>
+		<core-exception.version>0.5.0-SNAPSHOT</core-exception.version>
+		<core-metadata-client.version>0.5.0-SNAPSHOT</core-metadata-client.version>
+		<core-test.version>0.5.0-SNAPSHOT</core-test.version>
+		<support-logging-client.version>0.5.0-SNAPSHOT</support-logging-client.version>
 		<assembley-plugin.version>2.5.5</assembley-plugin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
