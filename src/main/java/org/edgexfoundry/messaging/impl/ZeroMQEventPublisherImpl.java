@@ -21,8 +21,7 @@ package org.edgexfoundry.messaging.impl;
 import com.google.gson.Gson;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
+import java.io.DataOutputStream;
 
 import org.edgexfoundry.domain.core.Event;
 import org.edgexfoundry.messaging.EventPublisher;
@@ -92,10 +91,10 @@ public class ZeroMQEventPublisherImpl implements EventPublisher {
    */
   private byte[] toByteArray(Event event) throws IOException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    try (ObjectOutput out = new ObjectOutputStream(bos)) {
+    try (DataOutputStream out = new DataOutputStream(bos)) {
       Gson gson = new Gson();
       String eventString = gson.toJson(event);
-      out.writeObject(eventString);
+      out.write(eventString.getBytes());
       return bos.toByteArray();
     }
   }
